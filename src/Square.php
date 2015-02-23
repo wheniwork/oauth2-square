@@ -48,7 +48,9 @@ class Square extends AbstractProvider
 
     public function userDetails($response, AccessToken $token)
     {
-        $user = new SquareMerchant((array) $response);
+        // Ensure the response is converted to an array, recursively
+        $response = json_decode(json_encode($response), true);
+        $user = new SquareMerchant($response);
         return $user;
     }
 
