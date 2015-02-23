@@ -1,7 +1,7 @@
 # Square Provider for OAuth 2.0 Client
 
-[![Build Status](https://travis-ci.org/shadowhand/oauth2-square.svg?branch=master)](https://travis-ci.org/shadowhand/oauth2-square)
-[![Latest Stable Version](https://poser.pugx.org/shadowhand/oauth2-square/v/stable.svg)](https://packagist.org/packages/shadowhand/oauth2-square)
+[![Build Status](https://travis-ci.org/wheniwork/oauth2-square.svg?branch=master)](https://travis-ci.org/wheniwork/oauth2-square)
+[![Latest Stable Version](https://poser.pugx.org/wheniwork/oauth2-square/v/stable.svg)](https://packagist.org/packages/wheniwork/oauth2-square)
 
 This package provides Square OAuth 2.0 support for the PHP League's [OAuth 2.0 Client](https://github.com/thephpleague/oauth2-client).
 
@@ -10,19 +10,19 @@ This package provides Square OAuth 2.0 support for the PHP League's [OAuth 2.0 C
 To install, use composer:
 
 ```
-composer require shadowhand/oauth2-square
+composer require wheniwork/oauth2-square
 ```
 
 ## Usage
 
-Usage is the same as The League's OAuth client, using `\Shadowhand\OAuth2\Client\Provider\Square` as the provider.
+Usage is the same as The League's OAuth client, using `\Wheniwork\OAuth2\Client\Provider\Square` as the provider.
 
 To make requests against the Square staging server, pass `'debug' => true` as part of the initial configuration options.
 
 ### Authorization Code Flow
 
 ```php
-$provider = new Pixelfear\OAuth2\Client\Provider\Square([
+$provider = new Wheniwork\OAuth2\Client\Provider\Square([
     'clientId'          => '{square-client-id}',
     'clientSecret'      => '{square-client-secret}',
     'redirectUri'       => 'https://example.com/callback-url'
@@ -72,7 +72,7 @@ if (!isset($_GET['code'])) {
 ## Refreshing a Token
 
 ```php
-$provider = new League\OAuth2\Client\Provider\Square([
+$provider = new Wheniwork\OAuth2\Client\Provider\Square([
     'clientId'          => '{square-client-id}',
     'clientSecret'      => '{square-client-secret}',
     'redirectUri'       => 'https://example.com/callback-url'

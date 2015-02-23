@@ -1,8 +1,8 @@
 <?php
 
-namespace Shadowhand\OAuth2\Client\Test\Provider;
+namespace Wheniwork\OAuth2\Client\Test\Provider;
 
-use Shadowhand\OAuth2\Client\Provider\Square;
+use Wheniwork\OAuth2\Client\Provider\Square;
 use League\OAuth2\Client\Token\AccessToken;
 
 use Mockery as m;
@@ -77,7 +77,7 @@ class SquareTest extends \PHPUnit_Framework_TestCase
         $token = $this->provider->getAccessToken('authorization_code', ['code' => 'mock_authorization_code']);
         $user = $this->provider->getUserDetails($token);
 
-        $this->assertInstanceOf('Shadowhand\OAuth2\Client\Provider\SquareMerchant', $user);
+        $this->assertInstanceOf('Wheniwork\OAuth2\Client\Provider\SquareMerchant', $user);
 
         $this->assertEquals(12345, $this->provider->getUserUid($token));
         $this->assertEquals('mock_name', $this->provider->getUserScreenName($token));

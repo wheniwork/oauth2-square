@@ -1,6 +1,6 @@
 <?php
 
-namespace Shadowhand\OAuth2\Client\Provider;
+namespace Wheniwork\OAuth2\Client\Provider;
 
 class SquareMerchant
 {

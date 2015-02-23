@@ -1,5 +1,5 @@
 {
-    "name": "shadowhand/oauth2-square",
+    "name": "wheniwork/oauth2-square",
     "description": "Square OAuth 2.0 Client Provider for The PHP League OAuth2-Client",
     "license": "MIT",
     "authors": [
@@ -7,6 +7,11 @@
             "name": "Woody Gilk",
             "email": "woody.gilk@gmail.com",
             "homepage": "https://github.com/shadowhand"
+        },
+        {
+            "name": "Daniel Olfelt",
+            "email": "dolfelt@gmail.com",
+            "homepage": "https://github.com/dolfelt"
         }
     ],
     "keywords": [
@@ -27,12 +32,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Shadowhand\\OAuth2\\Client\\Provider\\": "src/"
+            "Wheniwork\\OAuth2\\Client\\Provider\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Shadowhand\\OAuth2\\Client\\Test\\Provider\\": "tests/src/"
+            "Wheniwork\\OAuth2\\Client\\Test\\Provider\\": "tests/src/"
         }
     }
 }
