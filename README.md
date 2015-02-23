@@ -1,7 +1,8 @@
 # Square Provider for OAuth 2.0 Client
 
-[![Build Status](https://travis-ci.org/wheniwork/oauth2-square.svg?branch=master)](https://travis-ci.org/wheniwork/oauth2-square)
-[![Latest Stable Version](https://poser.pugx.org/wheniwork/oauth2-square/v/stable.svg)](https://packagist.org/packages/wheniwork/oauth2-square)
+[![Build Status](https://img.shields.io/travis/wheniwork/oauth2-square.svg)](https://travis-ci.org/wheniwork/oauth2-square)
+[![License](https://img.shields.io/packagist/l/wheniwork/oauth2-square.svg)](https://github.com/wheniwork/oauth2-square/blob/master/LICENSE)
+[![Latest Stable Version](https://img.shields.io/packagist/v/wheniwork/oauth2-square.svg)](https://packagist.org/packages/wheniwork/oauth2-square)
 
 This package provides Square OAuth 2.0 support for the PHP League's [OAuth 2.0 Client](https://github.com/thephpleague/oauth2-client).
 
