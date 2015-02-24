@@ -59,13 +59,43 @@ class SquareTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayNotHasKey('query', $uri);
     }
 
+    public function testGetAccessToken()
+    {
+        $expiration = time() + 60 * 60 * 24 * 30; // Square tokens expire after 30 days
+
+        $response = m::mock('Guzzle\Http\Message\Response');
+        $response->shouldReceive('getBody')->times(1)->andReturn(sprintf(
+            '{"access_token": "mock_access_token", "expires_at": "%s", "id": 1}',
+            date('Y-m-d', $expiration) // ISO 8601
+        ));
+
+        $client = m::mock('Guzzle\Service\Client');
+        $client->shouldReceive('setBaseUrl')->times(1);
+        $client->shouldReceive('post->send')->times(1)->andReturn($response);
+        $this->provider->setHttpClient($client);
+
+        $token = $this->provider->getAccessToken('authorization_code', ['code' => 'mock_authorization_code']);
+
+        $this->assertEquals('mock_access_token', $token->accessToken);
+        $this->assertLessThanOrEqual($expiration, $token->expires);
+        $this->assertGreaterThanOrEqual(time(), $token->expires);
+        $this->assertEquals('1', $token->uid);
+    }
+
     public function testUserData()
     {
+        $expiration = time() + 60 * 60 * 24 * 30; // Square tokens expire after 30 days
+
         $postResponse = m::mock('Guzzle\Http\Message\Response');
-        $postResponse->shouldReceive('getBody')->times(1)->andReturn('{"access_token": "mock_access_token", "expires": 3600, "refresh_token": "mock_refresh_token", "id": 1}');
+        $postResponse->shouldReceive('getBody')->times(1)->andReturn(sprintf(
+            '{"access_token": "mock_access_token", "expires_at": "%s", "id": 1}',
+            date('Y-m-d', $expiration) // ISO 8601
+        ));
 
         $getResponse = m::mock('Guzzle\Http\Message\Response');
-        $getResponse->shouldReceive('getBody')->times(4)->andReturn('{"id": 12345, "name": "mock_name", "email": "mock_email"}');
+        $getResponse->shouldReceive('getBody')->times(4)->andReturn(
+            '{"id": 12345, "name": "mock_name", "email": "mock_email"}'
+        );
 
         $client = m::mock('Guzzle\Service\Client');
         $client->shouldReceive('setBaseUrl')->times(5);
