@@ -15,7 +15,7 @@ class Square extends AbstractProvider
      */
     public $debug = false;
 
-    public $uidKey = 'id';
+    public $uidKey = 'merchant_id';
 
     public $scopeSeparator = ' ';
 
