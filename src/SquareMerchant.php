@@ -4,7 +4,7 @@ namespace Wheniwork\OAuth2\Client\Provider;
 
 class SquareMerchant
 {
-    public $id;
+    public $uid;
     public $name;
     public $email;
     public $county_code;
@@ -22,6 +22,10 @@ class SquareMerchant
 
     public function __construct(array $attributes)
     {
+        if (!empty($attributes['id'])) {
+            $this->uid = $attributes['id'];
+        }
+
         $attributes = array_intersect_key($attributes, $this->toArray());
         foreach ($attributes as $key => $value) {
             $this->$key = $value;
