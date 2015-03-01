@@ -114,4 +114,12 @@ class SquareTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('mock_name', $user->name);
         $this->assertEquals('mock_email', $this->provider->getUserEmail($token));
     }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testRefreshAccessToken()
+    {
+        $token = $this->provider->getAccessToken('refresh_token', ['refresh_token' => 'mock_access_token']);
+    }
 }
