@@ -66,7 +66,7 @@ class SquareTest extends \PHPUnit_Framework_TestCase
         $response = m::mock('Guzzle\Http\Message\Response');
         $response->shouldReceive('getBody')->times(1)->andReturn(sprintf(
             '{"access_token": "mock_access_token", "expires_at": "%s", "merchant_id": 1}',
-            date('Y-m-d', $expiration) // ISO 8601
+            date('c', $expiration) // ISO 8601
         ));
 
         $client = m::mock('Guzzle\Service\Client');
@@ -89,7 +89,7 @@ class SquareTest extends \PHPUnit_Framework_TestCase
         $postResponse = m::mock('Guzzle\Http\Message\Response');
         $postResponse->shouldReceive('getBody')->times(1)->andReturn(sprintf(
             '{"access_token": "mock_access_token", "expires_at": "%s", "merchant_id": 1}',
-            date('Y-m-d', $expiration) // ISO 8601
+            date('c', $expiration) // ISO 8601
         ));
 
         $getResponse = m::mock('Guzzle\Http\Message\Response');
