@@ -14,7 +14,6 @@ class RenewToken implements GrantInterface
 
     /**
      * @param  AccessToken $token
-     * @return void
      */
     public function __construct(AccessToken $token = null)
     {
