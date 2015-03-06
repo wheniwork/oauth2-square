@@ -4,6 +4,7 @@ namespace Wheniwork\OAuth2\Client\Provider;
 
 use Wheniwork\OAuth2\Client\Grant\RenewToken;
 
+use Guzzle\Http\Exception\BadResponseException;
 use League\OAuth2\Client\Exception\IDPException;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Token\AccessToken;
