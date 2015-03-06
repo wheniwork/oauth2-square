@@ -78,6 +78,8 @@ class Square extends AbstractProvider
      * Provides support for token renewal instead of token refreshing.
      *
      * {@inheritdoc}
+     *
+     * @return AccessToken
      */
     public function getAccessToken($grant = 'authorization_code', $params = [])
     {
