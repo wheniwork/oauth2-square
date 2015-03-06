@@ -116,13 +116,14 @@ class Square extends AbstractProvider
             // @codeCoverageIgnoreEnd
         }
 
+        $result = json_decode($response, true);
+
         if (isset($result['error']) && ! empty($result['error'])) {
             // @codeCoverageIgnoreStart
             throw new IDPException($result);
             // @codeCoverageIgnoreEnd
         }
 
-        $result = json_decode($response, true);
         $result = $this->prepareAccessTokenResult($result);
 
         return $grant->handleResponse($result);
