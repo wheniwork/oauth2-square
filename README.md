@@ -1,6 +1,7 @@
 # Square Provider for OAuth 2.0 Client
 
 [![Build Status](https://img.shields.io/travis/wheniwork/oauth2-square.svg)](https://travis-ci.org/wheniwork/oauth2-square)
+[![Code Quality](https://img.shields.io/scrutinizer/g/wheniwork/oauth2-square.svg)](https://scrutinizer-ci.com/g/wheniwork/oauth2-square/)
 [![License](https://img.shields.io/packagist/l/wheniwork/oauth2-square.svg)](https://github.com/wheniwork/oauth2-square/blob/master/LICENSE)
 [![Latest Stable Version](https://img.shields.io/packagist/v/wheniwork/oauth2-square.svg)](https://packagist.org/packages/wheniwork/oauth2-square)
 
