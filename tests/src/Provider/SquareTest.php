@@ -2,8 +2,9 @@
 
 namespace Wheniwork\OAuth2\Client\Test\Provider;
 
-use Wheniwork\OAuth2\Client\Provider\Square;
+use Guzzle\Http\Exception\BadResponseException;
 use League\OAuth2\Client\Token\AccessToken;
+use Wheniwork\OAuth2\Client\Provider\Square;
 
 use Mockery as m;
 
@@ -92,8 +93,8 @@ class SquareTest extends \PHPUnit_Framework_TestCase
             '{"type": "internal_server_error", "message": "Something went wrong"}'
         );
 
-        $exception = m::mock('Guzzle\Http\Exception\BadResponseException');
-        $exception->shouldReceive('getResponse')->times(1)->andReturn($response);
+        $exception = new BadResponseException;
+        $exception->setResponse($response);
 
         $request = m::mock('Guzzle\Http\Message\Request');
         $request->shouldReceive('setBody')->with(
