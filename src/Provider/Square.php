@@ -118,7 +118,7 @@ class Square extends AbstractProvider
 
         $result = json_decode($response, true);
 
-        if (isset($result['error']) && !empty($result['error'])) {
+        if (!empty($result['error']) || !empty($e)) {
             // @codeCoverageIgnoreStart
             throw new IDPException($result);
             // @codeCoverageIgnoreEnd

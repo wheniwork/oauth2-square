@@ -82,6 +82,40 @@ class SquareTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('1', $token->uid);
     }
 
+    /**
+     * @expectedException League\OAuth2\Client\Exception\IDPException
+     */
+    public function testGetAccessTokenFailure()
+    {
+        $response = m::mock('Guzzle\Http\Message\Response');
+        $response->shouldReceive('getBody')->times(1)->andReturn(
+            '{"type": "internal_server_error", "message": "Something went wrong"}'
+        );
+
+        $exception = m::mock('Guzzle\Http\Exception\BadResponseException');
+        $exception->shouldReceive('getResponse')->times(1)->andReturn($response);
+
+        $request = m::mock('Guzzle\Http\Message\Request');
+        $request->shouldReceive('setBody')->with(
+            $body = m::type('string'),
+            $type = 'application/json'
+        )->times(1)->andReturn($request);
+        $request->shouldReceive('send')->times(1)->andThrow($exception);
+
+        $client = m::mock('Guzzle\Service\Client');
+        $client->shouldReceive('post')->with(
+            $this->provider->urlRenewToken(),
+            m::on(function ($headers) {
+                return !empty($headers['Authorization'])
+                    && strpos($headers['Authorization'], 'Client') === 0;
+            })
+        )->times(1)->andReturn($request);
+        $this->provider->setHttpClient($client);
+
+        $this->provider->getAccessToken('renew_token', ['access_token' => 'mock_token']);
+    }
+
+
     public function testUserData()
     {
         $expiration = time() + 60 * 60 * 24 * 30; // Square tokens expire after 30 days
