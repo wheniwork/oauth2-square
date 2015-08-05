@@ -35,7 +35,7 @@ if (!isset($_GET['code'])) {
 
     // If we don't have an authorization code then get one
     $authUrl = $provider->getAuthorizationUrl();
-    $_SESSION['oauth2state'] = $provider->state;
+    $_SESSION['oauth2state'] = $provider->getState();
     header('Location: '.$authUrl);
     exit;
 
@@ -55,11 +55,11 @@ if (!isset($_GET['code'])) {
     // Optional: Now you have a token you can look up a users profile data
     try {
 
-        // We got an access token, let's now get the user's details
-        $userDetails = $provider->getUserDetails($token);
+        // We got an access token, let's now get the merchant details
+        $merchant = $provider->getResourceOwner($token);
 
         // Use these details to create a new profile
-        printf('Hello %s!', $userDetails->firstName);
+        printf('Hello %s!', $merchant->getName());
 
     } catch (Exception $e) {
 
@@ -68,7 +68,7 @@ if (!isset($_GET['code'])) {
     }
 
     // Use this to interact with an API on the users behalf
-    echo $token->accessToken;
+    echo $token->getToken();
 }
 ```
 
@@ -86,12 +86,4 @@ $provider = new Wheniwork\OAuth2\Client\Provider\Square([
 ]);
 
 $token = $provider->getAccessToken('renew_token', ['access_token' => $accessToken]);
-```
-
-This grant can also be used by injecting the `AccessToken` instance directly,
-instead of providing a parameter to `getAccessToken`:
-
-```php
-$grant = new Wheniwork\OAuth2\Client\Grant\RenewToken($token);
-$token = $provider->getAccessToken($grant);
 ```

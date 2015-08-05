@@ -4,24 +4,28 @@ namespace Wheniwork\OAuth2\Client\Provider;
 
 use Wheniwork\OAuth2\Client\Grant\RenewToken;
 
-use Guzzle\Http\Exception\BadResponseException;
-use League\OAuth2\Client\Exception\IDPException;
+use League\OAuth2\Client\Grant\GrantFactory;
 use League\OAuth2\Client\Provider\AbstractProvider;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Grant\RefreshToken;
+use League\OAuth2\Client\Grant\Exception\InvalidGrantException;
+use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 class Square extends AbstractProvider
 {
+    use BearerAuthorizationTrait;
+
+    const ACCESS_TOKEN_RESOURCE_OWNER_ID = 'merchant_id';
+
     /**
      * Enable debugging by connecting to the Square staging server.
      *
      * @var boolean
      */
-    public $debug = false;
-
-    public $uidKey = 'merchant_id';
-
-    public $scopeSeparator = ' ';
+    protected $debug = false;
 
     /**
      * Get a Square connect URL, depending on path.
@@ -35,14 +39,19 @@ class Square extends AbstractProvider
         return "https://connect.squareup{$staging}.com/{$path}";
     }
 
-    public function urlAuthorize()
+    public function getBaseAuthorizationUrl()
     {
         return $this->getConnectUrl('oauth2/authorize');
     }
 
-    public function urlAccessToken()
+    public function getBaseAccessTokenUrl(array $params)
     {
         return $this->getConnectUrl('oauth2/token');
+    }
+
+    public function getResourceOwnerDetailsUrl(AccessToken $token)
+    {
+        return $this->getConnectUrl('v1/me');
     }
 
     /**
@@ -51,9 +60,10 @@ class Square extends AbstractProvider
      * Square does not provide normal refresh tokens, and provides token
      * renewal instead.
      *
+     * @param  array $params
      * @return string
      */
-    public function urlRenewToken()
+    public function getBaseRenewTokenUrl(array $params)
     {
         return $this->getConnectUrl(sprintf(
             'oauth2/clients/%s/access-token/renew',
@@ -61,88 +71,67 @@ class Square extends AbstractProvider
         ));
     }
 
-    public function urlUserDetails(AccessToken $token)
+    public function setGrantFactory(GrantFactory $factory)
     {
-        return $this->getConnectUrl('v1/me');
-    }
-
-    public function userDetails($response, AccessToken $token)
-    {
-        // Ensure the response is converted to an array, recursively
-        $response = json_decode(json_encode($response), true);
-        $user = new SquareMerchant($response);
-        return $user;
-    }
-
-    /**
-     * Provides support for token renewal instead of token refreshing.
-     *
-     * {@inheritdoc}
-     *
-     * @return AccessToken
-     */
-    public function getAccessToken($grant = 'authorization_code', $params = [])
-    {
-        if ($grant === 'refresh_token' || $grant instanceof RefreshToken) {
-            throw new \InvalidArgumentException(
-                'Square does not support refreshing tokens, please use renew_token instead'
-            );
-        }
-
-        if (is_string($grant) && $grant === 'renew_token') {
-            $grant = new RenewToken();
-        }
-
-        if (!($grant instanceof RenewToken)) {
-            return parent::getAccessToken($grant, $params);
-        }
-
-        $requestParams = $grant->prepRequestParams([], $params);
-
-        $headers = [
-            'Authorization' => 'Client ' . $this->clientSecret,
-            'Accept'        => 'application/json',
-        ];
-
+        // Register the renew token as a possible grant, rather than overloading
+        // getAccessToken to support it.
         try {
-            $request = $this->getHttpClient()
-                ->post($this->urlRenewToken(), $headers)
-                ->setBody(json_encode($requestParams), 'application/json')
-                ->send();
-            $response = $request->getBody();
-        } catch (BadResponseException $e) {
-            // @codeCoverageIgnoreStart
-            $response = $e->getResponse()->getBody();
-            // @codeCoverageIgnoreEnd
+            $factory->getGrant('renew_token');
+        } catch (InvalidGrantException $e) {
+            $factory->setGrant('renew_token', new RenewToken);
         }
 
-        $result = json_decode($response, true);
-
-        if (!empty($result['error']) || !empty($e)) {
-            // @codeCoverageIgnoreStart
-            throw new IDPException($result);
-            // @codeCoverageIgnoreEnd
-        }
-
-        $result = $this->prepareAccessTokenResult($result);
-
-        return $grant->handleResponse($result);
+        return parent::setGrantFactory($factory);
     }
 
-    protected function fetchUserDetails(AccessToken $token)
+    protected function verifyGrant($grant)
     {
-        $this->headers['Authorization'] = 'Bearer ' . $token->accessToken;
-        $this->headers['Accept']        = 'application/json';
+        $grant = parent::verifyGrant($grant);
 
-        return parent::fetchUserDetails($token);
+        if ($grant instanceof RefreshToken) {
+            throw new InvalidGrantException('Refresh tokens are not supported by Square');
+        }
+
+        return $grant;
     }
 
-    protected function prepareAccessTokenResult(array $result)
+    protected function getScopeSeparator()
+    {
+        return ' ';
+    }
+
+    protected function getDefaultScopes()
+    {
+        return [
+            'MERCHANT_PROFILE_READ',
+        ];
+    }
+
+    protected function getDefaultHeaders()
+    {
+        return array_merge(parent::getDefaultHeaders(), [
+            'Accept' => 'application/json',
+        ]);
+    }
+
+    protected function checkResponse(ResponseInterface $response, $data)
+    {
+        if (!empty($data['type']) && $response->getStatusCode() >= 400) {
+            throw new IdentityProviderException($data['message'], 0, $data);
+        }
+    }
+
+    protected function prepareAccessTokenResponse(array $result)
     {
         // Square uses a ISO 8601 timestamp to represent the expiration date.
         // http://docs.connect.squareup.com/#post-token
         $result['expires_in'] = strtotime($result['expires_at']) - time();
 
-        return parent::prepareAccessTokenResult($result);
+        return parent::prepareAccessTokenResponse($result);
+    }
+
+    protected function createResourceOwner(array $response, AccessToken $token)
+    {
+        return new SquareMerchant($response);
     }
 }

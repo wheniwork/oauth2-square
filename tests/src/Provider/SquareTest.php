@@ -2,7 +2,7 @@
 
 namespace Wheniwork\OAuth2\Client\Test\Provider;
 
-use Guzzle\Http\Exception\BadResponseException;
+use GuzzleHttp\Exception\BadResponseException;
 use League\OAuth2\Client\Token\AccessToken;
 use Wheniwork\OAuth2\Client\Provider\Square;
 
@@ -38,12 +38,14 @@ class SquareTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayHasKey('state', $query);
         $this->assertArrayHasKey('scope', $query);
         $this->assertArrayHasKey('response_type', $query);
-        $this->assertNotNull($this->provider->state);
+        $this->assertNotNull($this->provider->getState());
+
+        $this->assertEquals('/oauth2/authorize', $uri['path']);
     }
 
     public function testUrlAccessToken()
     {
-        $url = $this->provider->urlAccessToken();
+        $url = $this->provider->getBaseAccessTokenUrl([]);
         $uri = parse_url($url);
 
         $this->assertEquals('/oauth2/token', $uri['path']);
@@ -53,7 +55,7 @@ class SquareTest extends \PHPUnit_Framework_TestCase
     {
         $token = new AccessToken(['access_token' => 'fake']);
 
-        $url = $this->provider->urlUserDetails($token);
+        $url = $this->provider->getResourceOwnerDetailsUrl($token);
         $uri = parse_url($url);
 
         $this->assertEquals('/v1/me', $uri['path']);
@@ -64,94 +66,104 @@ class SquareTest extends \PHPUnit_Framework_TestCase
     {
         $expiration = time() + 60 * 60 * 24 * 30; // Square tokens expire after 30 days
 
-        $response = m::mock('Guzzle\Http\Message\Response');
-        $response->shouldReceive('getBody')->times(1)->andReturn(sprintf(
-            '{"access_token": "mock_access_token", "expires_at": "%s", "merchant_id": 1}',
-            date('c', $expiration) // ISO 8601
-        ));
+        $response = m::mock('GuzzleHttp\Psr7\Response');
 
-        $client = m::mock('Guzzle\Service\Client');
-        $client->shouldReceive('setBaseUrl')->times(1);
-        $client->shouldReceive('post->send')->times(1)->andReturn($response);
+        $response->shouldReceive('getHeader')
+            ->with('content-type')
+            ->andReturn(['application/json']);
+
+        $response->shouldReceive('getBody')
+            ->andReturn(sprintf(
+                '{"access_token": "mock_access_token", "expires_at": "%s", "merchant_id": 1}',
+                date('c', $expiration) // ISO 8601
+            ));
+
+        $client = m::mock('GuzzleHttp\Client[send]');
+
+        $client->shouldReceive('send')
+            ->with(m::type('GuzzleHttp\Psr7\Request'))
+            ->andReturn($response);
+
         $this->provider->setHttpClient($client);
 
         $token = $this->provider->getAccessToken('authorization_code', ['code' => 'mock_authorization_code']);
 
-        $this->assertEquals('mock_access_token', $token->accessToken);
-        $this->assertLessThanOrEqual($expiration, $token->expires);
-        $this->assertGreaterThanOrEqual(time(), $token->expires);
-        $this->assertEquals('1', $token->uid);
+        $this->assertEquals('mock_access_token', $token->getToken());
+        $this->assertLessThanOrEqual($expiration, $token->getExpires());
+        $this->assertGreaterThanOrEqual(time(), $token->getExpires());
+        $this->assertEquals('1', $token->getResourceOwnerId());
     }
 
     /**
-     * @expectedException League\OAuth2\Client\Exception\IDPException
+     * @expectedException League\OAuth2\Client\Provider\Exception\IdentityProviderException
      */
     public function testGetAccessTokenFailure()
     {
-        $response = m::mock('Guzzle\Http\Message\Response');
-        $response->shouldReceive('getBody')->times(1)->andReturn(
-            '{"type": "internal_server_error", "message": "Something went wrong"}'
-        );
+        $response = m::mock('GuzzleHttp\Psr7\Response');
+        $response->shouldReceive('getHeader')
+            ->with('content-type')
+            ->andReturn(['application/json']);
 
-        $exception = new BadResponseException;
-        $exception->setResponse($response);
+        $response->shouldReceive('getBody')
+            ->andReturn(
+                '{"type": "internal_server_error", "message": "Something went wrong"}'
+            );
 
-        $request = m::mock('Guzzle\Http\Message\Request');
-        $request->shouldReceive('setBody')->with(
-            $body = m::type('string'),
-            $type = 'application/json'
-        )->times(1)->andReturn($request);
-        $request->shouldReceive('send')->times(1)->andThrow($exception);
+        $response->shouldReceive('getStatusCode')
+            ->andReturn(500);
 
-        $client = m::mock('Guzzle\Service\Client');
-        $client->shouldReceive('post')->with(
-            $this->provider->urlRenewToken(),
-            m::on(function ($headers) {
-                return !empty($headers['Authorization'])
-                    && strpos($headers['Authorization'], 'Client') === 0;
-            })
-        )->times(1)->andReturn($request);
+        $exception = m::mock('GuzzleHttp\Exception\BadResponseException');
+        $exception->shouldReceive('getResponse')
+            ->andReturn($response);
+
+        $client = m::mock('GuzzleHttp\Client[send]');
+        $client->shouldReceive('send')
+            ->andThrow($exception);
+
         $this->provider->setHttpClient($client);
 
-        $this->provider->getAccessToken('renew_token', ['access_token' => 'mock_token']);
+        $token = $this->provider->getAccessToken('authorization_code', ['code' => 'mock_authorization_code']);
     }
 
 
     public function testUserData()
     {
-        $expiration = time() + 60 * 60 * 24 * 30; // Square tokens expire after 30 days
+        $response = m::mock('GuzzleHttp\Psr7\Response');
+        $response->shouldReceive('getHeader')
+            ->with('content-type')
+            ->andReturn(['application/json']);
 
-        $postResponse = m::mock('Guzzle\Http\Message\Response');
-        $postResponse->shouldReceive('getBody')->times(1)->andReturn(sprintf(
-            '{"access_token": "mock_access_token", "expires_at": "%s", "merchant_id": 1}',
-            date('c', $expiration) // ISO 8601
-        ));
+        $response->shouldReceive('getBody')
+            ->andReturn(
+                '{"id": 12345, "name": "mock_name", "email": "mock_email"}'
+            );
 
-        $getResponse = m::mock('Guzzle\Http\Message\Response');
-        $getResponse->shouldReceive('getBody')->times(4)->andReturn(
-            '{"id": 12345, "name": "mock_name", "email": "mock_email"}'
-        );
+        $client = m::mock('GuzzleHttp\Client[send]');
 
-        $client = m::mock('Guzzle\Service\Client');
-        $client->shouldReceive('setBaseUrl')->times(5);
-        $client->shouldReceive('setDefaultOption')->times(4);
-        $client->shouldReceive('post->send')->times(1)->andReturn($postResponse);
-        $client->shouldReceive('get->send')->times(4)->andReturn($getResponse);
+        $client->shouldReceive('send')
+            ->with(m::on(function ($request) {
+                $header = $request->getHeader('Authorization');
+                return $header && $header[0] === 'Bearer mock_token';
+            }))
+            ->andReturn($response);
+
         $this->provider->setHttpClient($client);
 
-        $token = $this->provider->getAccessToken('authorization_code', ['code' => 'mock_authorization_code']);
-        $user = $this->provider->getUserDetails($token);
+        $token = new AccessToken([
+            'access_token' => 'mock_token',
+        ]);
 
-        $this->assertInstanceOf('Wheniwork\OAuth2\Client\Provider\SquareMerchant', $user);
+        $owner = $this->provider->getResourceOwner($token);
 
-        $this->assertEquals(12345, $this->provider->getUserUid($token));
-        $this->assertEquals('mock_name', $this->provider->getUserScreenName($token));
-        $this->assertEquals('mock_name', $user->name);
-        $this->assertEquals('mock_email', $this->provider->getUserEmail($token));
+        $this->assertInstanceOf('Wheniwork\OAuth2\Client\Provider\SquareMerchant', $owner);
+
+        $this->assertEquals(12345, $owner->getId());
+        $this->assertEquals('mock_name', $owner->getName());
+        $this->assertEquals('mock_email', $owner->getEmail());
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException League\OAuth2\Client\Grant\Exception\InvalidGrantException
      */
     public function testRefreshAccessToken()
     {
