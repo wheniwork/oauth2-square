@@ -29,7 +29,7 @@ class Square extends AbstractProvider
      * @param  string $path
      * @return string
      */
-    protected function getConnectUrl($path)
+    public function getConnectUrl($path)
     {
         $staging = $this->debug ? 'staging' : '';
         return "https://connect.squareup{$staging}.com/{$path}";
